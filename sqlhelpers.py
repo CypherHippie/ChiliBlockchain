@@ -98,6 +98,23 @@ def isnewuser(username):
     usernames = [user.get('username') for user in data]
 
     return False if username in usernames else True
+#get the blockchain from mysql and convert to Blockchain object
+def get_blockchain():
+    blockchain = Blockchain()
+    blockchain_sql = Table("blockchain", "number", "hash", "previous", "data", "nonce")
+    for b in blockchain_sql.getall():
+        blockchain.add(Block(int(b.get('number')), b.get('previous'), b.get('data'), int(b.get('nonce'))))
+
+    return blockchain
+
+#update blockchain in mysql table
+def sync_blockchain(blockchain):
+    blockchain_sql = Table("blockchain", "number", "hash", "previous", "data", "nonce")
+    blockchain_sql.deleteall()
+
+    for block in blockchain.chain:
+        blockchain_sql.insert(str(block.number), block.hash(), block.previous_hash, block.data, block.nonce)
+
 
 #send money from one user to another
 def send_money(sender, recipient, amount):
@@ -139,19 +156,3 @@ def get_balance(username):
             balance += float(data[2])
     return balance
 
-#get the blockchain from mysql and convert to Blockchain object
-def get_blockchain():
-    blockchain = Blockchain()
-    blockchain_sql = Table("blockchain", "number", "hash", "previous", "data", "nonce")
-    for b in blockchain_sql.getall():
-        blockchain.add(Block(int(b.get('number')), b.get('previous'), b.get('data'), int(b.get('nonce'))))
-
-    return blockchain
-
-#update blockchain in mysql table
-def sync_blockchain(blockchain):
-    blockchain_sql = Table("blockchain", "number", "hash", "previous", "data", "nonce")
-    blockchain_sql.deleteall()
-
-    for block in blockchain.chain:
-        blockchain_sql.insert(str(block.number), block.hash(), block.previous_hash, block.data, block.nonce)
